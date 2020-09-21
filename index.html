@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+</head>
+<body>
+  <div id="app">
+    <v-app>
+      <v-main>
+          <v-card class="mx-auto mt-5" max-width="1200">
+              <v-btn rounded color="light-blue lighten-2
+              " @click="formNuevo()">Crear</v-btn>
+
+              <v-simple-table class="mt-5">
+                  <template v-slot:default>
+                    <thead>
+                        <tr class="cyan lighten-2">
+                          <th class="white--text">ID</th>
+                          <th class="white--text">DESCRIPCIÓN</th>
+                          <th class="white--text">PRECIO</th>
+                          <th class="white--text">STOCK</th>
+                          <th class="white--text">ACCIONES</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="articulo in articulos" :key="articulo.id">
+                          <td>{{ articulo.id }}</td>
+                          <td>{{ articulo.descripcion }}</td>
+                          <td>{{ articulo.precio }}</td>
+                          <td>{{ articulo.stock }}</td>
+                          <td>
+                              <v-btn color="green lighten-2" @click="formEditar(articulo.id,articulo.descripcion,articulo.precio,articulo.stock)">Editar</v-btn>
+                              <v-btn class="red lighten-2" @click="borrar(articulo.id)">Borrar</v-btn>
+                          </td>
+                        </tr>
+                      </tbody>
+                  </template>
+              </v-simple-table>
+
+              <v-dialog v-model="dialog" max-width="500">
+                <v-card>
+                    <v-card-title class="blue-grey darken-2 white--text">Artículos</v-card-title>
+                        <v-card-text>
+                            <v-form>
+                                <v-container>
+                                    <v-row>
+                                        <input v-model="articulo.id" hidden></input>
+                                        <v-col cols="12" md="4">
+                                            <v-text-field 
+                                                v-model="articulo.descripcion"
+                                                label="Descripción"
+                                                solo required>{{articulo.descripcion}}
+                                            </v-text-field>
+                                        </v-col>
+                                        <v-col cols="12" md="4">
+                                            <v-text-field 
+                                                v-model="articulo.precio"
+                                                label="S/. Precio"
+                                                type="number"
+                                                solo required>
+                                            </v-text-field>
+                                        </v-col>
+                                        <v-col cols="12" md="4">
+                                            <v-text-field 
+                                                v-model="articulo.stock"
+                                                label="Stock"
+                                                type="number"
+                                                solo required>
+                                            </v-text-field>
+                                        </v-col>
+                                    </v-row>
+                                </v-container>
+                            </v-card-text>
+                            <v-card-actions>
+                                <v-spacer></v-spacer>
+                                <v-btn @click="dialog=false">Cancelar</v-btn>
+                                <v-btn @click="guardar()" type="submit" color="indigo" dark>Guardar</v-btn>
+                            </v-card-actions>
+                        </v-form>
+                </v-card>
+            </v-dialog>
+
+          </v-card>
+      </v-main>
+    </v-app>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10.3.0/dist/sweetalert2.all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.20.0/axios.min.js" integrity="sha512-quHCp3WbBNkwLfYUMd+KwBAgpVukJu5MncuQaWXgCrfgcxCJAq/fo+oqrRKOj+UKEmyMCG3tb8RB63W+EmrOBg==" crossorigin="anonymous"></script>
+  <script>
+    var url="http://localhost/CRUDS/crud-vuejs-vuetify-php-mysql/crud.php";
+    new Vue({
+      el: '#app',
+      vuetify: new Vuetify(),
+      data(){
+          return{
+              articulos:[],
+              dialog:false,
+              operacion:'',
+              articulo:{
+                  id:null,
+                  descripcion:'',
+                  precio:'',
+                  stock:''
+              }
+          }
+      },
+      created(){
+        this.mostrar()
+      },
+      methods:{
+          //métodos para el CRUD
+          mostrar:function(){
+              axios.post(url,{opcion:1})
+              .then(response =>{
+                  this.articulos= response.data
+              })
+          },
+
+          crear:function(){
+            axios.post(url,{opcion:2, descripcion:this.articulo.descripcion, precio:this.articulo.precio, stock:this.articulo.stock})
+            .then(response =>{
+                this.mostrar();
+            });
+            this.articulo.descripcion="";
+            this.articulo.precio="";
+            this.articulo.stock="";
+          },
+
+          editar:function(id, descripcion, precio, stock){
+            axios.post(url, {opcion:3, id:this.articulo.id, descripcion:this.articulo.descripcion, precio:this.articulo.precio, stock:this.articulo.stock})
+            .then(response =>{
+                this.mostrar();
+            })
+          },
+
+          borrar:function(id){
+            Swal.fire({
+                title:'¿Desea eliminar artículo?',
+                confirmButtonText:'Confirmar',
+                showCancelButton:true,
+            }).then((result) => {
+                if(result.isConfirmed){
+                    axios.post(url, {opcion:4,id:id}).then(response =>{
+                        this.mostrar();
+                    });
+                    Swal.fire('Eliminado','','success')
+                }else if(result.isDenied){
+                    
+                }
+            })
+          },
+          
+          //botones y formularios
+          guardar:function(){
+            if(this.operacion=='crear'){
+                this.crear();
+            }
+            if(this.operacion=='editar'){
+                this.editar();
+            }
+            this.dialog=false;
+          },
+          formNuevo:function(){
+              this.dialog=true;
+              this.operacion='crear';
+                this.articulo.descripcion="";
+                this.articulo.precio="";
+                this.articulo.stock="";
+          },
+          formEditar:function(id, descripcion, precio, stock){
+            this.articulo.id = id;
+            this.articulo.descripcion = descripcion;
+            this.articulo.precio = precio;
+            this.articulo.stock = stock;
+            this.dialog=true;
+            this.operacion='editar';
+          },
+      }
+    })
+  </script>
+</body>
+</html>
